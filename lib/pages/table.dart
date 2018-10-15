@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 
 class Tables extends StatefulWidget {
   String type;
-  
+  Tables(this.type);
 
   @override
   _TablesState createState() => _TablesState();

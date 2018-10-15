@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_masked_text/flutter_masked_text.dart';
 import 'package:kpr/pages/table.dart';
 import 'package:kpr/util/validator.dart';
@@ -31,14 +32,23 @@ class _FlatState extends State<Flat> with ValidationMixin{
   bool errorTenor = false;
 
   @override
-  void initState() {
-    // TODO: implement initState
+  void initState(){
     super.initState();
-    _totalBayarCtrl.updateText('100000000');
+   
+    SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp
+    ]);
   }
 
-  Future<bool> validateComboBox() {
-    
+  @override
+  dispose(){
+    super.dispose();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeRight,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
   }
 
   void _hitungCicilan() {
@@ -58,7 +68,7 @@ class _FlatState extends State<Flat> with ValidationMixin{
   void _openTable() {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (BuildContext context) => Tables()
+        builder: (BuildContext context) => Tables('flat')
       )
     );
   }
