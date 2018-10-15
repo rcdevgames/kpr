@@ -2,12 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:kpr/pages/efektif.dart';
 import 'package:kpr/pages/flat.dart';
 
-class DrawerItem {
-  String title;
-  IconData icon;
-  DrawerItem(this.title, this.icon);
-}
-
 class MainPage extends StatefulWidget {
 
   @override
@@ -15,60 +9,88 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPageState extends State<MainPage> {
+  PageController _pageController;
+  int _page = 0;
 
-  int _selectedDrawerIndex = 0;
-  final drawerItems = [
-    new DrawerItem("Simulasi Bunga Efektif", Icons.insert_chart),
-    new DrawerItem("Simulasi Bunga Flat", Icons.insert_chart),
-    // new DrawerItem("Logout", Icons.exit_to_app)
-  ];
-
-  _getDrawerItemWidget(int pos) {
-    switch (pos) {
-      case 0:
-        return new Efektif();
-      case 1:
-        return new Flat();
-
-      default:
-        return new Text("Error");
-    }
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
   }
 
-  _onSelectItem(int index) {
+  @override
+  void dispose() {
+    super.dispose();
+    _pageController.dispose();
+  }
+
+
+  void navigationTapped(int page) {
+    // Animating to the page.
+    // You can use whatever duration and curve you like
+    _pageController.animateToPage(page,
+        duration: const Duration(milliseconds: 300), curve: Curves.ease);
+  }
+
+  void onPageChanged(int page) {
     setState(() {
-      _selectedDrawerIndex = index;
+      this._page = page;
     });
-    Navigator.of(context).pop(); // close the drawer
   }
-    
+
   @override
   Widget build(BuildContext context) {
-    var drawerOptions = <Widget>[];
-    for (var i = 0; i < drawerItems.length; i++) {
-      var d = drawerItems[i];
-      drawerOptions.add(
-        new ListTile(
-          leading: new Icon(d.icon),
-          title: new Text(d.title),
-          selected: i == _selectedDrawerIndex,
-          onTap: () => _onSelectItem(i),
-        )
-      );
-    }
-
     return Scaffold(
       appBar: AppBar(
-        title: Text(''),
+        title: Text(
+          'Perhitungan KPR',
+          style: TextStyle(color: const Color(0xFFFFFFFF)),
+        ),
       ),
-      drawer: Drawer(
-        child: Container(
-         padding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
-          child: Column(children: drawerOptions)
-        )
+      body: PageView(
+        children: [
+          Efektif(),
+          Flat()
+        ],
+        onPageChanged: onPageChanged,
+        controller: _pageController,
       ),
-      resizeToAvoidBottomPadding: false,
-      body: _getDrawerItemWidget(_selectedDrawerIndex),
+      bottomNavigationBar: Theme(
+        data: Theme.of(context).copyWith(
+              // sets the background color of the `BottomNavigationBar`
+              canvasColor: Colors.red,
+            ), // sets the inactive color of the `BottomNavigationBar`
+        child: BottomNavigationBar(
+          items: [
+            BottomNavigationBarItem(
+              icon: Icon(
+                Icons.assessment,
+                color: const Color(0xFFFFFFFF),
+              ),
+              title: Text(
+                "Bunga Efektif",
+                style: TextStyle(
+                  color: const Color(0xFFFFFFFF),
+                ),
+              )
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(
+                Icons.assessment,
+                color: const Color(0xFFFFFFFF),
+              ),
+              title: Text(
+                "Bunga Flat",
+                style: TextStyle(
+                  color: const Color(0xFFFFFFFF),
+                ),
+              )
+            ),
+          ],
+          onTap: navigationTapped,
+          currentIndex: _page,
+        ),
+      ),
     );
   }
 }
