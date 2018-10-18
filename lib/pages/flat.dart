@@ -11,13 +11,12 @@ class Flat extends StatefulWidget {
 
 class _FlatState extends State<Flat> with ValidationMixin{
   final _formData = GlobalKey<FormState>();
-  var _hargaCtrl = new MaskedTextController(mask: '000.000.000');
-  var _dpCtrl = new MaskedTextController(mask: '000.000.000');
-  var _jumlahCtrl = new MaskedTextController(mask: '000.000.000');
-  var _bungaCtrl = new MaskedTextController(mask: '000.000.000');
-  var _totalBayarCtrl = new MaskedTextController(mask: '000.000.000');
-  var _totalBungaCtrl = new MaskedTextController(mask: '000.000.000');
-  var _cicilanCtrl = new MaskedTextController(mask: '000.000.000');
+  var _hargaCtrl = new MoneyMaskedTextController(thousandSeparator: ',', decimalSeparator: '.');
+  var _dpCtrl = new MoneyMaskedTextController(thousandSeparator: ',', decimalSeparator: '.');
+  var _jumlahCtrl = new MoneyMaskedTextController(thousandSeparator: ',', decimalSeparator: '.');
+  var _totalBayarCtrl = new MoneyMaskedTextController(thousandSeparator: ',', decimalSeparator: '.');
+  var _totalBungaCtrl = new MoneyMaskedTextController(thousandSeparator: ',', decimalSeparator: '.');
+  var _cicilanCtrl = new MoneyMaskedTextController(thousandSeparator: ',', decimalSeparator: '.');
   
   // Form Data
   String _harga;
@@ -38,6 +37,9 @@ class _FlatState extends State<Flat> with ValidationMixin{
     SystemChrome.setPreferredOrientations([
         DeviceOrientation.portraitUp
     ]);
+
+    _hargaCtrl.addListener(_autoCounting);
+    _dpCtrl.addListener(_changeDP);
   }
 
   @override
@@ -65,10 +67,29 @@ class _FlatState extends State<Flat> with ValidationMixin{
     }
   }
 
+  void _autoCounting() {
+    var harga = _hargaCtrl.text;
+    var dp = _dpCtrl.text;
+    if (harga != '0.00') {
+      num result = 0.2 *  double.parse(harga.replaceAll(',', ''));
+      num result_ = num.parse(harga.replaceAll(',', '')) - num.parse(dp.replaceAll(',', ''));
+      print(result);
+      _dpCtrl.updateValue(result);
+      _jumlahCtrl.updateValue(result_);
+    }
+  }
+
+  void _changeDP() {
+    var harga = _hargaCtrl.text;
+    var dp = _dpCtrl.text;
+     num result_ = num.parse(harga.replaceAll(',', '')) - num.parse(dp.replaceAll(',', ''));
+     _jumlahCtrl.updateValue(result_);
+  }
+
   void _openTable() {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (BuildContext context) => Tables('flat')
+        builder: (BuildContext context) => Tables(type:'flat')
       )
     );
   }
@@ -186,7 +207,7 @@ class _FlatState extends State<Flat> with ValidationMixin{
                         Expanded(
                           flex: 3,
                           child: TextFormField(
-                            controller: _bungaCtrl,
+                            // controller: _bungaCtrl,
                             keyboardType: TextInputType.number,
                             onSaved: (val) => _bunga = val.replaceAll('.', ''),
                             validator: validateRequired,

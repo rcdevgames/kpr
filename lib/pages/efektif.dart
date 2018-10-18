@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_masked_text/flutter_masked_text.dart';
@@ -11,13 +13,12 @@ class Efektif extends StatefulWidget {
 
 class _EfektifState extends State<Efektif> with ValidationMixin{
   final _formData = GlobalKey<FormState>();
-  var _hargaCtrl = new MaskedTextController(mask: '000.000.000');
-  var _dpCtrl = new MaskedTextController(mask: '000.000.000');
-  var _jumlahCtrl = new MaskedTextController(mask: '000.000.000');
-  var _bungaCtrl = new MaskedTextController(mask: '000.000.000');
-  var _totalBayarCtrl = new MaskedTextController(mask: '000.000.000');
-  var _totalBungaCtrl = new MaskedTextController(mask: '000.000.000');
-  var _cicilanCtrl = new MaskedTextController(mask: '000.000.000');
+  var _hargaCtrl = new MoneyMaskedTextController(thousandSeparator: ',', decimalSeparator: '.');
+  var _dpCtrl = new MoneyMaskedTextController(thousandSeparator: ',', decimalSeparator: '.');
+  var _jumlahCtrl = new MoneyMaskedTextController(thousandSeparator: ',', decimalSeparator: '.');
+  var _totalBayarCtrl = new MoneyMaskedTextController(thousandSeparator: ',', decimalSeparator: '.');
+  var _totalBungaCtrl = new MoneyMaskedTextController(thousandSeparator: ',', decimalSeparator: '.');
+  var _cicilanCtrl = new MoneyMaskedTextController(thousandSeparator: ',', decimalSeparator: '.');
   
   // Form Data
   String _harga;
@@ -39,6 +40,9 @@ class _EfektifState extends State<Efektif> with ValidationMixin{
     SystemChrome.setPreferredOrientations([
         DeviceOrientation.portraitUp
     ]);
+
+    _hargaCtrl.addListener(_autoCounting);
+    _dpCtrl.addListener(_changeDP);
   }
 
   @override
@@ -62,14 +66,41 @@ class _EfektifState extends State<Efektif> with ValidationMixin{
       form.save();
       if (errorTenor == false) {
         print('Fix Value : {"Harga" : $_harga},{"DP" : $_dp},{"Jumlah Pinjaman" : $_jumlah_pinjam},{"Bunga" : $_bunga}');
+        var bunga_bulan = (num.parse(_bunga) / 12)/100;
+        var pembagi = 1-(1/pow(1+bunga_bulan,num.parse(_tenor)));
+        var hasil = num.parse(_jumlah_pinjam) / (pembagi/bunga_bulan);
+
+        print(hasil);
+
+        var ang_bunga = num.parse(_jumlah_pinjam)
+
       }
     }
+  }
+
+  void _autoCounting() {
+    var harga = _hargaCtrl.text;
+    var dp = _dpCtrl.text;
+    if (harga != '0.00') {
+      num result = 0.2 *  double.parse(harga.replaceAll(',', ''));
+      num result_ = num.parse(harga.replaceAll(',', '')) - num.parse(dp.replaceAll(',', ''));
+      print(result);
+      _dpCtrl.updateValue(result);
+      _jumlahCtrl.updateValue(result_);
+    }
+  }
+
+  void _changeDP() {
+    var harga = _hargaCtrl.text;
+    var dp = _dpCtrl.text;
+     num result_ = num.parse(harga.replaceAll(',', '')) - num.parse(dp.replaceAll(',', ''));
+     _jumlahCtrl.updateValue(result_);
   }
 
   void _openTable() {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (BuildContext context) => Tables('efektif')
+        builder: (BuildContext context) => Tables(type:'efektif')
       )
     );
   }
@@ -85,12 +116,13 @@ class _EfektifState extends State<Efektif> with ValidationMixin{
               padding: EdgeInsets.all(16.0),
               child: Form(
                 key: _formData,
+                // onChanged: _autoCounting,
                 child: Column(
                   children: <Widget>[
                     TextFormField(
                       controller: _hargaCtrl,
                       keyboardType: TextInputType.number,
-                      onSaved: (val) => _harga = val.replaceAll('.', ''),
+                      onSaved: (val) => _harga = val.replaceAll(',', '').substring(0, (val.indexOf(".")-2)),
                       validator: validateRequired,
                       decoration: InputDecoration(
                         prefixText: 'Rp. ',
@@ -101,7 +133,7 @@ class _EfektifState extends State<Efektif> with ValidationMixin{
                     TextFormField(
                       controller: _dpCtrl,
                       keyboardType: TextInputType.number,
-                      onSaved: (val) => _dp = val.replaceAll('.', ''),
+                      onSaved: (val) => _dp = val.replaceAll(',', '').substring(0, (val.indexOf(".")-2)),
                       validator: validateRequired,
                       decoration: InputDecoration(
                         prefixText: 'Rp. ',
@@ -112,8 +144,9 @@ class _EfektifState extends State<Efektif> with ValidationMixin{
                     TextFormField(
                       controller: _jumlahCtrl,
                       keyboardType: TextInputType.number,
-                      onSaved: (val) => _jumlah_pinjam = val.replaceAll('.', ''),
-                      validator: validateRequired,
+                      onSaved: (val) => _jumlah_pinjam = val.replaceAll(',', '').substring(0, (val.indexOf(".")-2)),
+                      // validator: validateRequired,
+                      enabled: false,
                       decoration: InputDecoration(
                         prefixText: 'Rp. ',
                         labelText: 'Jumlah Pinjaman / Hutang',
@@ -187,10 +220,11 @@ class _EfektifState extends State<Efektif> with ValidationMixin{
                         Expanded(
                           flex: 3,
                           child: TextFormField(
-                            controller: _bungaCtrl,
+                            // controller: _bungaCtrl,
                             keyboardType: TextInputType.number,
-                            onSaved: (val) => _bunga = val.replaceAll('.', ''),
+                            onSaved: (val) => _bunga = val,
                             validator: validateRequired,
+                            maxLength: 3,
                             decoration: InputDecoration(
                               labelText: 'Bunga',
                               contentPadding: EdgeInsets.fromLTRB(10.0, 10.0, 20.0, 10.0)

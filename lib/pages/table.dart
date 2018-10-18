@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 
 class Tables extends StatefulWidget {
   String type;
-  Tables(this.type);
+  Tables({Key key, this.type}) : super(key: key);
 
   @override
   _TablesState createState() => _TablesState();
@@ -29,6 +29,7 @@ class _TablesState extends State<Tables> {
           title = 'Tabel Bunga Efektif';
       }      
     });
+
   }
 
   @override
@@ -48,7 +49,48 @@ class _TablesState extends State<Tables> {
       appBar: AppBar(
         title: Text(title),
       ),
-      body: Container(),
+      body: Container(
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          children: <Widget>[
+            Container(
+              padding: EdgeInsets.only(bottom: 5.0),
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(width: 1.0))
+              ),
+              child: Row(
+                children: <Widget>[
+                  Expanded(child: Text('Bulan')),
+                  Expanded(child: Text('Pokok')),
+                  Expanded(child: Text('Bunga')),
+                  Expanded(child: Text('Total Cicilan'))
+                ],
+              ),
+            ),
+            Expanded(
+                          child: Container(
+                // height: 250.0,
+                child: ListView.builder(
+                  itemCount: 30,
+                  itemBuilder: (BuildContext context, int index) {
+                    return Container(
+                      padding: EdgeInsets.only(bottom: 2.0),
+                      child: Row(
+                        children: <Widget>[
+                          Expanded(child: Text((index + 1).toString())),
+                          Expanded(child: Text('Name')),
+                          Expanded(child: Text('Address')),
+                          Expanded(child: Text('Action'))
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            )
+          ],
+        )
+      ),
     );
   }
 }
