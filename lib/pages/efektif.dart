@@ -72,8 +72,15 @@ class _EfektifState extends State<Efektif> with ValidationMixin{
 
         print(hasil);
 
-        var ang_bunga = num.parse(_jumlah_pinjam)
+        var hutang = num.parse(_jumlah_pinjam);
 
+        var ang_bunga = num.parse(_jumlah_pinjam) * bunga_bulan;
+        var ang_pokok = hasil - ang_bunga;
+        hutang = hutang - ang_pokok;
+        var cicilan = ang_bunga + ang_pokok;
+        
+
+        print('New Value : {"Angsuran Pokok" : $ang_pokok},{"Angsusan Bunga" : $ang_bunga},{"Cicilan" : $cicilan},{"Sisa Hutang" : $hutang}');
       }
     }
   }

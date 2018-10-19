@@ -17,6 +17,8 @@ class _FlatState extends State<Flat> with ValidationMixin{
   var _totalBayarCtrl = new MoneyMaskedTextController(thousandSeparator: ',', decimalSeparator: '.');
   var _totalBungaCtrl = new MoneyMaskedTextController(thousandSeparator: ',', decimalSeparator: '.');
   var _cicilanCtrl = new MoneyMaskedTextController(thousandSeparator: ',', decimalSeparator: '.');
+  var _bungaCtrl = new TextEditingController();
+  ScrollController _scrollController = new ScrollController();
   
   // Form Data
   String _harga;
@@ -29,6 +31,7 @@ class _FlatState extends State<Flat> with ValidationMixin{
   String _cicilan;
 
   bool errorTenor = false;
+  bool hasCount = false;
 
   @override
   void initState(){
@@ -51,6 +54,7 @@ class _FlatState extends State<Flat> with ValidationMixin{
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
     ]);
+    _scrollController;
   }
 
   void _hitungCicilan() {
@@ -62,9 +66,48 @@ class _FlatState extends State<Flat> with ValidationMixin{
     if (form.validate()) {
       form.save();
       if (errorTenor == false) {
-        print('Fix Value : {"Harga" : $_harga},{"DP" : $_dp},{"Jumlah Pinjaman" : $_jumlah_pinjam},{"Bunga" : $_bunga}');
+        print('Fix Value : {"Harga" : $_harga},{"DP" : $_dp},{"Jumlah Pinjaman" : $_jumlah_pinjam},{"Bunga" : $_bunga},{"Tenor" : $_tenor}');
+
+        var bunga = num.parse(_jumlah_pinjam) * (num.parse(_bunga)/100) * num.parse(_tenor);
+        var bungatotal = bunga + num.parse(_jumlah_pinjam);
+        var angsuran = (bungatotal/12)/num.parse(_tenor);
+
+        var tBunga = (bunga.toString()).replaceAll('.', '');
+        var tBayarTotal = (bungatotal.toString()).replaceAll('.', '');
+        var tAngsuran = (angsuran.round()).toString();
+        print('New Value : {"Bunga" : $bunga},{"Total Bunga" : $bungatotal},{"angsuran" : $angsuran}');
+
+        _totalBayarCtrl.updateValue(double.parse(tBayarTotal));
+        _totalBungaCtrl.updateValue(double.parse(tBunga));
+        _cicilanCtrl.updateValue(angsuran);
+
+        setState(()=> hasCount = true );
+        
+        _scrollController.animateTo(
+          (100.0 * 2),
+          curve: Curves.easeOut,
+          duration: const Duration(milliseconds: 300),
+        );
+
       }
     }
+  }
+
+  void _resetCount() {
+    _hargaCtrl.updateValue(0.00);
+    _dpCtrl.updateValue(0.00);
+    _jumlahCtrl.updateValue(0.00);
+    _bungaCtrl.clear();
+    
+    setState(()=> _tenor = null);
+
+    _scrollController.animateTo(
+      0.0,
+      curve: Curves.easeOut,
+      duration: const Duration(milliseconds: 300),
+    );
+
+     setState(()=> hasCount = false );
   }
 
   void _autoCounting() {
@@ -99,6 +142,7 @@ class _FlatState extends State<Flat> with ValidationMixin{
     return Container(
       padding: EdgeInsets.all(6.0),
       child: ListView(
+        controller: _scrollController,
         children: <Widget>[
           Card(
             child: Container(
@@ -110,8 +154,8 @@ class _FlatState extends State<Flat> with ValidationMixin{
                     TextFormField(
                       controller: _hargaCtrl,
                       keyboardType: TextInputType.number,
-                      onSaved: (val) => _harga = val.replaceAll('.', ''),
-                      validator: validateRequired,
+                      onSaved: (val) => _harga = (val.substring(0, val.indexOf('.') - 1)).replaceAll(',', ''),
+                      validator: validateRequiredNumber,
                       decoration: InputDecoration(
                         prefixText: 'Rp. ',
                         labelText: 'Harga Properti',
@@ -121,8 +165,8 @@ class _FlatState extends State<Flat> with ValidationMixin{
                     TextFormField(
                       controller: _dpCtrl,
                       keyboardType: TextInputType.number,
-                      onSaved: (val) => _dp = val.replaceAll('.', ''),
-                      validator: validateRequired,
+                      onSaved: (val) => _dp = (val.substring(0, val.indexOf('.') - 1)).replaceAll(',', ''),
+                      validator: validateRequiredNumber,
                       decoration: InputDecoration(
                         prefixText: 'Rp. ',
                         labelText: 'Uang Muka / DP 20% (Default)',
@@ -132,8 +176,8 @@ class _FlatState extends State<Flat> with ValidationMixin{
                     TextFormField(
                       controller: _jumlahCtrl,
                       keyboardType: TextInputType.number,
-                      onSaved: (val) => _jumlah_pinjam = val.replaceAll('.', ''),
-                      validator: validateRequired,
+                      onSaved: (val) => _jumlah_pinjam = (val.substring(0, val.indexOf('.') - 1)).replaceAll(',', ''),
+                      validator: validateRequiredNumber,
                       decoration: InputDecoration(
                         prefixText: 'Rp. ',
                         labelText: 'Jumlah Pinjaman / Hutang',
@@ -207,10 +251,10 @@ class _FlatState extends State<Flat> with ValidationMixin{
                         Expanded(
                           flex: 3,
                           child: TextFormField(
-                            // controller: _bungaCtrl,
+                            controller: _bungaCtrl,
                             keyboardType: TextInputType.number,
-                            onSaved: (val) => _bunga = val.replaceAll('.', ''),
-                            validator: validateRequired,
+                            onSaved: (val) => _bunga = val,
+                            validator: validateRequiredNumber,
                             decoration: InputDecoration(
                               labelText: 'Bunga',
                               contentPadding: EdgeInsets.fromLTRB(10.0, 10.0, 20.0, 10.0)
@@ -234,9 +278,9 @@ class _FlatState extends State<Flat> with ValidationMixin{
                           elevation: 3.0,
                           minWidth: 200.0,
                           height: 40.0,
-                          onPressed: _hitungCicilan,
+                          onPressed: !hasCount ? _hitungCicilan : _resetCount,
                           color: Colors.red,
-                          child: Text("Hitung", style: TextStyle(color: Colors.white)),
+                          child: !hasCount ? Text("Hitung", style: TextStyle(color: Colors.white)) : Text("Reset", style: TextStyle(color: Colors.white)),
                         ),
                       ),
                     )
@@ -245,6 +289,7 @@ class _FlatState extends State<Flat> with ValidationMixin{
               ),
             ),
           ),
+          hasCount ? 
           Card(
             child: Container(
               padding: EdgeInsets.all(10.0),
@@ -299,7 +344,7 @@ class _FlatState extends State<Flat> with ValidationMixin{
                 ],
               ),
             ),
-          )
+          ) : Container()
         ],
       )
     );

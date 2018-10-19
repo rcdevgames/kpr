@@ -28,7 +28,7 @@ class ValidationMixin {
   }
 
   String validateRequiredNumber(String val) {
-    if (val.isEmpty) {
+    if (val.isEmpty || val == '0.00') {
       return 'Required!';
     } else if (!isNumeric(val)) {
       return 'Only Number!';
@@ -40,7 +40,7 @@ class ValidationMixin {
     if(s == null) {
       return false;
     }
-    return double.parse(s, (e) => null) != null;
+    return double.parse(s.replaceAll(',', ''), (e) => null) != null;
   }
 
 
