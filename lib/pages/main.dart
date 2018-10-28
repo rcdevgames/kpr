@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kpr/pages/efektif.dart';
 import 'package:kpr/pages/flat.dart';
+import 'package:firebase_admob/firebase_admob.dart';
 
 class MainPage extends StatefulWidget {
 
@@ -8,20 +9,58 @@ class MainPage extends StatefulWidget {
   _MainPageState createState() => _MainPageState();
 }
 
+const String testDevice = 'YOUR_DEVICE_ID';
+
 class _MainPageState extends State<MainPage> {
+  static final MobileAdTargetingInfo targetingInfo = MobileAdTargetingInfo(
+    testDevices: testDevice != null ? <String>[testDevice] : null,
+    keywords: <String>['Simulasi kpr', 'Kalkulator kpr', 'kpr', 'rumah', 'cicilan', 'kredit rumah', 'apartemen'],
+    birthday: DateTime.now(),
+    childDirected: true,
+    gender: MobileAdGender.male
+  );
+
+  BannerAd _bannerAd;
+  InterstitialAd _interstitialAd;
   PageController _pageController;
   int _page = 0;
+
+  BannerAd createBannerAd() {
+    return BannerAd(
+      adUnitId: BannerAd.testAdUnitId,
+      size: AdSize.banner,
+      targetingInfo: targetingInfo,
+      listener: (MobileAdEvent event) {
+        print("BannerAd event $event");
+      },
+    );
+  }
+
+  InterstitialAd createInterstitialAd() {
+    return InterstitialAd(
+      adUnitId: InterstitialAd.testAdUnitId,
+      targetingInfo: targetingInfo,
+      listener: (MobileAdEvent event) {
+        print("InterstitialAd event $event");
+      },
+    );
+  }
 
   @override
   void initState() {
     super.initState();
+    FirebaseAdMob.instance.initialize(appId: FirebaseAdMob.testAppId);
+    _bannerAd = createBannerAd()..load()..show(anchorType: AnchorType.top);
+    _interstitialAd = createInterstitialAd()..load();
     _pageController = PageController();
   }
 
   @override
   void dispose() {
-    super.dispose();
+    _bannerAd?.dispose();
+    _interstitialAd?.dispose();
     _pageController.dispose();
+    super.dispose();
   }
 
 
@@ -43,14 +82,14 @@ class _MainPageState extends State<MainPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Perhitungan KPR',
+          'Simulasi KPR',
           style: TextStyle(color: const Color(0xFFFFFFFF)),
         ),
       ),
       body: PageView(
         children: [
-          Efektif(),
-          Flat()
+          Efektif(ads: _interstitialAd),
+          Flat(ads: _interstitialAd)
         ],
         onPageChanged: onPageChanged,
         controller: _pageController,

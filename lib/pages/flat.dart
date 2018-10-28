@@ -3,8 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_masked_text/flutter_masked_text.dart';
 import 'package:kpr/pages/table.dart';
 import 'package:kpr/util/validator.dart';
+import 'package:firebase_admob/firebase_admob.dart';
 
 class Flat extends StatefulWidget {
+  InterstitialAd ads;
+  Flat({Key key, this.ads}) : super(key:key);
+
   @override
   _FlatState createState() => _FlatState();
 }
@@ -147,6 +151,7 @@ class _FlatState extends State<Flat> with ValidationMixin{
 
   void _openTable() {
     
+    widget.ads..load()..show();
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (BuildContext context) => Tables(type:'flat', data: data)
