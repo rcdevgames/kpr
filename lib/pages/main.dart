@@ -72,6 +72,10 @@ class _MainPageState extends State<MainPage> {
                 style: TextStyle(
                   color: const Color(0xFFFFFFFF),
                 ),
+              ),
+              activeIcon: Icon(
+                Icons.assessment,
+                color: const Color(0xFFfffa00),
               )
             ),
             BottomNavigationBarItem(
@@ -84,6 +88,10 @@ class _MainPageState extends State<MainPage> {
                 style: TextStyle(
                   color: const Color(0xFFFFFFFF),
                 ),
+              ),
+              activeIcon: Icon(
+                Icons.assessment,
+                color: const Color(0xFFfffa00),
               )
             ),
           ],

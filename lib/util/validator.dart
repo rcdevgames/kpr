@@ -36,6 +36,13 @@ class ValidationMixin {
     return null;
   }
 
+  String validateNumber(String val) {
+    if (!isNumeric(val)) {
+      return 'Only Number';
+    }
+    return null;
+  }
+
   bool isNumeric(String s) {
     if(s == null) {
       return false;

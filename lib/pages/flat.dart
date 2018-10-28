@@ -33,6 +33,8 @@ class _FlatState extends State<Flat> with ValidationMixin{
   bool errorTenor = false;
   bool hasCount = false;
 
+  Map<String, dynamic> data;
+
   @override
   void initState(){
     super.initState();
@@ -66,19 +68,24 @@ class _FlatState extends State<Flat> with ValidationMixin{
     if (form.validate()) {
       form.save();
       if (errorTenor == false) {
+        setState(() {
+          _harga = _harga.substring(0, _harga.indexOf('.'));          
+          _dp = _dp.substring(0, _dp.indexOf('.'));          
+          _jumlah_pinjam = _jumlah_pinjam.substring(0, _jumlah_pinjam.indexOf('.'));          
+        });
         print('Fix Value : {"Harga" : $_harga},{"DP" : $_dp},{"Jumlah Pinjaman" : $_jumlah_pinjam},{"Bunga" : $_bunga},{"Tenor" : $_tenor}');
 
         var bunga = num.parse(_jumlah_pinjam) * (num.parse(_bunga)/100) * num.parse(_tenor);
         var bungatotal = bunga + num.parse(_jumlah_pinjam);
         var angsuran = (bungatotal/12)/num.parse(_tenor);
 
-        var tBunga = (bunga.toString()).replaceAll('.', '');
-        var tBayarTotal = (bungatotal.toString()).replaceAll('.', '');
-        var tAngsuran = (angsuran.round()).toString();
+        // var tBunga = (bunga.toString()).replaceAll('.', '');
+        // var tBayarTotal = (bungatotal.toString()).replaceAll('.', '');
+        // var tAngsuran = (angsuran.round()).toString();
         print('New Value : {"Bunga" : $bunga},{"Total Bunga" : $bungatotal},{"angsuran" : $angsuran}');
 
-        _totalBayarCtrl.updateValue(double.parse(tBayarTotal));
-        _totalBungaCtrl.updateValue(double.parse(tBunga));
+        _totalBayarCtrl.updateValue(bungatotal);
+        _totalBungaCtrl.updateValue(bunga);
         _cicilanCtrl.updateValue(angsuran);
 
         setState(()=> hasCount = true );
@@ -88,6 +95,15 @@ class _FlatState extends State<Flat> with ValidationMixin{
           curve: Curves.easeOut,
           duration: const Duration(milliseconds: 300),
         );
+
+        data = {
+          "tenor": num.parse(_tenor) * 12,
+          "pokok": num.parse(_jumlah_pinjam) / (num.parse(_tenor) * 12),
+          "angsuran": angsuran,
+          "total_bayar": bungatotal,
+          "total_bunga": bunga,
+          "jumlah_pinjam": num.parse(_jumlah_pinjam)
+        };
 
       }
     }
@@ -130,9 +146,10 @@ class _FlatState extends State<Flat> with ValidationMixin{
   }
 
   void _openTable() {
+    
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (BuildContext context) => Tables(type:'flat')
+        builder: (BuildContext context) => Tables(type:'flat', data: data)
       )
     );
   }
@@ -154,7 +171,7 @@ class _FlatState extends State<Flat> with ValidationMixin{
                     TextFormField(
                       controller: _hargaCtrl,
                       keyboardType: TextInputType.number,
-                      onSaved: (val) => _harga = (val.substring(0, val.indexOf('.') - 1)).replaceAll(',', ''),
+                      onSaved: (val) => _harga = val.replaceAll(',', ''),
                       validator: validateRequiredNumber,
                       decoration: InputDecoration(
                         prefixText: 'Rp. ',
@@ -165,8 +182,8 @@ class _FlatState extends State<Flat> with ValidationMixin{
                     TextFormField(
                       controller: _dpCtrl,
                       keyboardType: TextInputType.number,
-                      onSaved: (val) => _dp = (val.substring(0, val.indexOf('.') - 1)).replaceAll(',', ''),
-                      validator: validateRequiredNumber,
+                      onSaved: (val) => _dp = val.replaceAll(',', ''),
+                      validator: validateNumber,
                       decoration: InputDecoration(
                         prefixText: 'Rp. ',
                         labelText: 'Uang Muka / DP 20% (Default)',
@@ -176,7 +193,7 @@ class _FlatState extends State<Flat> with ValidationMixin{
                     TextFormField(
                       controller: _jumlahCtrl,
                       keyboardType: TextInputType.number,
-                      onSaved: (val) => _jumlah_pinjam = (val.substring(0, val.indexOf('.') - 1)).replaceAll(',', ''),
+                      onSaved: (val) => _jumlah_pinjam = val.replaceAll(',', ''),
                       validator: validateRequiredNumber,
                       decoration: InputDecoration(
                         prefixText: 'Rp. ',

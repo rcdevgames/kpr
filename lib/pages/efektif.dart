@@ -19,6 +19,8 @@ class _EfektifState extends State<Efektif> with ValidationMixin{
   var _totalBayarCtrl = new MoneyMaskedTextController(thousandSeparator: ',', decimalSeparator: '.');
   var _totalBungaCtrl = new MoneyMaskedTextController(thousandSeparator: ',', decimalSeparator: '.');
   var _cicilanCtrl = new MoneyMaskedTextController(thousandSeparator: ',', decimalSeparator: '.');
+  var _bungaCtrl = new TextEditingController();
+  ScrollController _scrollController = new ScrollController();
   
   // Form Data
   String _harga;
@@ -31,7 +33,9 @@ class _EfektifState extends State<Efektif> with ValidationMixin{
   String _cicilan;
 
   bool errorTenor = false;
+  bool hasCount = false;
 
+  Map<String, dynamic> data;
 
   @override
   void initState(){
@@ -65,24 +69,79 @@ class _EfektifState extends State<Efektif> with ValidationMixin{
     if (form.validate()) {
       form.save();
       if (errorTenor == false) {
-        print('Fix Value : {"Harga" : $_harga},{"DP" : $_dp},{"Jumlah Pinjaman" : $_jumlah_pinjam},{"Bunga" : $_bunga}');
-        var bunga_bulan = (num.parse(_bunga) / 12)/100;
-        var pembagi = 1-(1/pow(1+bunga_bulan,num.parse(_tenor)));
-        var hasil = num.parse(_jumlah_pinjam) / (pembagi/bunga_bulan);
+        setState(() {
+          _harga = _harga.substring(0, _harga.indexOf('.'));          
+          _dp = _dp.substring(0, _dp.indexOf('.'));          
+          _jumlah_pinjam = _jumlah_pinjam.substring(0, _jumlah_pinjam.indexOf('.'));          
+        });
+        print('Fix Value : {"Harga" : $_harga},{"DP" : $_dp},{"Jumlah Pinjaman" : $_jumlah_pinjam},{"Bunga" : $_bunga},{"Tenor" : $_tenor}');
+        // setState(()=> hasCount = true );
 
-        print(hasil);
+        num suku_bunga = (num.parse(_bunga)/12) / 100;
+        num periode = num.parse(_tenor) * 12;
 
-        var hutang = num.parse(_jumlah_pinjam);
+        num angsuran = num.parse(_jumlah_pinjam) * suku_bunga * (pow((1 + suku_bunga), periode) / (pow((1 + suku_bunga), periode) - 1));
 
-        var ang_bunga = num.parse(_jumlah_pinjam) * bunga_bulan;
-        var ang_pokok = hasil - ang_bunga;
-        hutang = hutang - ang_pokok;
-        var cicilan = ang_bunga + ang_pokok;
+        num sisa_hutang = num.parse(_jumlah_pinjam);
+        num total_pokok = 0;
+        num total_bunga = 0; 
+
+        for (var i = 1; i < periode + 1; i++) {
+          var bunga = suku_bunga * sisa_hutang;
+          var pokok = angsuran - bunga;
+
+          total_bunga = total_bunga + bunga;
+          total_pokok = total_pokok + pokok;
+
+          sisa_hutang = ((sisa_hutang - pokok) > 0) ? sisa_hutang - pokok : 0;
+          print('Hasil : {"Periode" : $i},{"Sisa Pokok" : $pokok},{"Sisa Bunga" : $bunga},{"Sisa Hutang" : $sisa_hutang}');
+        }
+
+        print('New Value : {"suku bunga" : $suku_bunga},{"periode" : $periode},{"angsuran" : $angsuran}');
+        print('New Value : {"Total Pokok" : $total_pokok},{"Total Bunga" : $total_bunga},{"Sisa Hutang" : $sisa_hutang}');
+
+        _totalBayarCtrl.updateValue(angsuran * periode);
+        _totalBungaCtrl.updateValue(total_bunga);
+        _cicilanCtrl.updateValue(angsuran);
+
+        setState(()=> hasCount = true );
         
+        _scrollController.animateTo(
+          (100.0 * 2),
+          curve: Curves.easeOut,
+          duration: const Duration(milliseconds: 300),
+        );
 
-        print('New Value : {"Angsuran Pokok" : $ang_pokok},{"Angsusan Bunga" : $ang_bunga},{"Cicilan" : $cicilan},{"Sisa Hutang" : $hutang}');
+        data = {
+          "tenor": periode,
+          "suku_bunga": suku_bunga,
+          "angsuran": angsuran,
+          "total_bunga": total_bunga,
+          "jumlah_pinjam": num.parse(_jumlah_pinjam),
+          "total_bayar": angsuran * periode
+        };
+
+        print(data);
+
       }
     }
+  }
+
+  void _resetCount() {
+    _hargaCtrl.updateValue(0.00);
+    _dpCtrl.updateValue(0.00);
+    _jumlahCtrl.updateValue(0.00);
+    _bungaCtrl.clear();
+    
+    setState(()=> _tenor = null);
+
+    _scrollController.animateTo(
+      0.0,
+      curve: Curves.easeOut,
+      duration: const Duration(milliseconds: 300),
+    );
+
+     setState(()=> hasCount = false );
   }
 
   void _autoCounting() {
@@ -107,7 +166,7 @@ class _EfektifState extends State<Efektif> with ValidationMixin{
   void _openTable() {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (BuildContext context) => Tables(type:'efektif')
+        builder: (BuildContext context) => Tables(type:'efektif', data: data)
       )
     );
   }
@@ -117,6 +176,7 @@ class _EfektifState extends State<Efektif> with ValidationMixin{
     return Container(
       padding: EdgeInsets.all(6.0),
       child: ListView(
+        controller: _scrollController,
         children: <Widget>[
           Card(
             child: Container(
@@ -129,7 +189,7 @@ class _EfektifState extends State<Efektif> with ValidationMixin{
                     TextFormField(
                       controller: _hargaCtrl,
                       keyboardType: TextInputType.number,
-                      onSaved: (val) => _harga = val.replaceAll(',', '').substring(0, (val.indexOf(".")-2)),
+                      onSaved: (val) => _harga = val.replaceAll(',', ''),
                       validator: validateRequired,
                       decoration: InputDecoration(
                         prefixText: 'Rp. ',
@@ -140,8 +200,8 @@ class _EfektifState extends State<Efektif> with ValidationMixin{
                     TextFormField(
                       controller: _dpCtrl,
                       keyboardType: TextInputType.number,
-                      onSaved: (val) => _dp = val.replaceAll(',', '').substring(0, (val.indexOf(".")-2)),
-                      validator: validateRequired,
+                      onSaved: (val) => _dp = val.replaceAll(',', ''),
+                      validator: validateNumber,
                       decoration: InputDecoration(
                         prefixText: 'Rp. ',
                         labelText: 'Uang Muka / DP 20% (Default)',
@@ -151,7 +211,7 @@ class _EfektifState extends State<Efektif> with ValidationMixin{
                     TextFormField(
                       controller: _jumlahCtrl,
                       keyboardType: TextInputType.number,
-                      onSaved: (val) => _jumlah_pinjam = val.replaceAll(',', '').substring(0, (val.indexOf(".")-2)),
+                      onSaved: (val) => _jumlah_pinjam = val.replaceAll(',', ''),
                       // validator: validateRequired,
                       enabled: false,
                       decoration: InputDecoration(
@@ -227,11 +287,10 @@ class _EfektifState extends State<Efektif> with ValidationMixin{
                         Expanded(
                           flex: 3,
                           child: TextFormField(
-                            // controller: _bungaCtrl,
+                            controller: _bungaCtrl,
                             keyboardType: TextInputType.number,
                             onSaved: (val) => _bunga = val,
                             validator: validateRequired,
-                            maxLength: 3,
                             decoration: InputDecoration(
                               labelText: 'Bunga',
                               contentPadding: EdgeInsets.fromLTRB(10.0, 10.0, 20.0, 10.0)
@@ -255,9 +314,9 @@ class _EfektifState extends State<Efektif> with ValidationMixin{
                           elevation: 3.0,
                           minWidth: 200.0,
                           height: 40.0,
-                          onPressed: _hitungCicilan,
+                          onPressed: !hasCount ? _hitungCicilan : _resetCount,
                           color: Colors.red,
-                          child: Text("Hitung", style: TextStyle(color: Colors.white)),
+                          child: !hasCount ? Text("Hitung", style: TextStyle(color: Colors.white)) : Text("Reset", style: TextStyle(color: Colors.white)),
                         ),
                       ),
                     )
@@ -266,6 +325,7 @@ class _EfektifState extends State<Efektif> with ValidationMixin{
               ),
             ),
           ),
+          hasCount ? 
           Card(
             child: Container(
               padding: EdgeInsets.all(10.0),
@@ -320,7 +380,7 @@ class _EfektifState extends State<Efektif> with ValidationMixin{
                 ],
               ),
             ),
-          )
+          ) : Container()
         ],
       )
     );
