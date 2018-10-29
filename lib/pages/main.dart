@@ -9,15 +9,12 @@ class MainPage extends StatefulWidget {
   _MainPageState createState() => _MainPageState();
 }
 
-const String testDevice = 'YOUR_DEVICE_ID';
+const String testDevice = '';
 
 class _MainPageState extends State<MainPage> {
   static final MobileAdTargetingInfo targetingInfo = MobileAdTargetingInfo(
-    testDevices: testDevice != null ? <String>[testDevice] : null,
-    keywords: <String>['Simulasi kpr', 'Kalkulator kpr', 'kpr', 'rumah', 'cicilan', 'kredit rumah', 'apartemen'],
-    birthday: DateTime.now(),
-    childDirected: true,
-    gender: MobileAdGender.male
+    testDevices: <String>[],
+    keywords: <String>['Simulasi kpr', 'Kalkulator kpr', 'kpr', 'rumah', 'cicilan', 'kredit rumah', 'apartemen']
   );
 
   BannerAd _bannerAd;
@@ -27,7 +24,7 @@ class _MainPageState extends State<MainPage> {
 
   BannerAd createBannerAd() {
     return BannerAd(
-      adUnitId: BannerAd.testAdUnitId,
+      adUnitId: "ca-app-pub-1002750497141780/6843676650",
       size: AdSize.banner,
       targetingInfo: targetingInfo,
       listener: (MobileAdEvent event) {
@@ -38,7 +35,7 @@ class _MainPageState extends State<MainPage> {
 
   InterstitialAd createInterstitialAd() {
     return InterstitialAd(
-      adUnitId: InterstitialAd.testAdUnitId,
+      adUnitId: "ca-app-pub-1002750497141780/3493504871",
       targetingInfo: targetingInfo,
       listener: (MobileAdEvent event) {
         print("InterstitialAd event $event");
@@ -49,7 +46,7 @@ class _MainPageState extends State<MainPage> {
   @override
   void initState() {
     super.initState();
-    FirebaseAdMob.instance.initialize(appId: FirebaseAdMob.testAppId);
+    FirebaseAdMob.instance.initialize(appId: "ca-app-pub-1002750497141780~9658914955");
     _bannerAd = createBannerAd()..load()..show(anchorType: AnchorType.top);
     _interstitialAd = createInterstitialAd()..load();
     _pageController = PageController();
